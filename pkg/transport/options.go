@@ -23,10 +23,10 @@ func Service(svc ServiceRoute) Option {
 	}
 }
 
-func Adder(svc *httpAdder) Option {
+func User(svc *httpUser) Option {
 	return func(srv *Server) {
 		if srv.srvHTTP != nil {
-			srv.httpAdder = svc
+			srv.httpUser = svc
 			svc.SetRoutes(srv.Fiber())
 		}
 	}

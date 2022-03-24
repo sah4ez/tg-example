@@ -82,8 +82,8 @@ func New(name string, log zerolog.Logger, url string, opts ...Option) (cli *Clie
 	return
 }
 
-func (cli *ClientJsonRPC) Adder() *ClientAdder {
-	return &ClientAdder{ClientJsonRPC: cli}
+func (cli *ClientJsonRPC) User() *ClientUser {
+	return &ClientUser{ClientJsonRPC: cli}
 }
 
 func defaultErrorDecoder(errData json.RawMessage) (err error) {

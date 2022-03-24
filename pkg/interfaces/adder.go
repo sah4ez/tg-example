@@ -4,6 +4,6 @@ import "context"
 
 // @tg jsonRPC-server log
 // @tg http-prefix=api/v1
-type Adder interface {
-	Add(ctx context.Context, a, b int) (c int, err error)
+type User interface {
+	GetUserNameByID(ctx context.Context, id int) (name string, err error)
 }

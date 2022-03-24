@@ -7,21 +7,38 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog/log"
-	"github.com/sah4ez/tg-example/pkg/adder"
+	"github.com/sah4ez/tg-example/pkg/config"
+	"github.com/sah4ez/tg-example/pkg/errors"
+	"github.com/sah4ez/tg-example/pkg/storage"
 	"github.com/sah4ez/tg-example/pkg/transport"
+	"github.com/sah4ez/tg-example/pkg/user"
 )
 
 func main() {
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, syscall.SIGINT)
 
+	log.Logger = config.Service().Logger()
+
 	log.Log().Msg("hello world")
 	defer log.Log().Msg("good bye")
 
-	svcAdder := adder.New()
+	var err error
+
+	store, err := storage.New(config.Service().DSN)
+	errors.ExitOnError(err, "create storage")
+
+	err = store.Migrate()
+	errors.ExitOnError(err, "failed migrate")
+
+	var (
+		userStore storage.User = store
+	)
+
+	svcUser := user.New(userStore)
 
 	services := []transport.Option{
-		transport.Adder(transport.NewAdder(log.Logger, svcAdder)),
+		transport.User(transport.NewUser(log.Logger, svcUser)),
 	}
 
 	srv := transport.New(log.Logger, services...).WithLog(log.Logger)

@@ -24,7 +24,7 @@ type Server struct {
 	srvHealth *fiber.App
 
 	reporterCloser io.Closer
-	httpAdder      *httpAdder
+	httpUser       *httpUser
 }
 
 func New(log zerolog.Logger, options ...Option) (srv *Server) {
@@ -52,8 +52,8 @@ func (srv *Server) Fiber() *fiber.App {
 }
 
 func (srv *Server) WithLog(log zerolog.Logger) *Server {
-	if srv.httpAdder != nil {
-		srv.httpAdder = srv.Adder().WithLog(log)
+	if srv.httpUser != nil {
+		srv.httpUser = srv.User().WithLog(log)
 	}
 	return srv
 }
@@ -86,6 +86,6 @@ func (srv *Server) Shutdown() {
 	}
 }
 
-func (srv Server) Adder() *httpAdder {
-	return srv.httpAdder
+func (srv Server) User() *httpUser {
+	return srv.httpUser
 }

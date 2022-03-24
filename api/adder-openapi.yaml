@@ -6,10 +6,10 @@ info:
 servers:
     - url: http://localhost:9000
 paths:
-    /api/v1/adder/add:
+    /api/v1/user/getUserNameByID:
         post:
             tags:
-                - Adder
+                - User
             requestBody:
                 content:
                     application/json:
@@ -26,7 +26,7 @@ paths:
                                     type: string
                                     example: "2.0"
                                 params:
-                                    $ref: '#/components/schemas/requestAdderAdd'
+                                    $ref: '#/components/schemas/requestUserGetUserNameByID'
             responses:
                 "200":
                     description: Successful operation
@@ -46,7 +46,7 @@ paths:
                                             type: string
                                             example: "2.0"
                                         result:
-                                            $ref: '#/components/schemas/responseAdderAdd'
+                                            $ref: '#/components/schemas/responseUserGetUserNameByID'
                                     - type: object
                                       properties:
                                         error:
@@ -74,18 +74,14 @@ paths:
                                             example: "2.0"
 components:
     schemas:
-        requestAdderAdd:
+        requestUserGetUserNameByID:
             type: object
             properties:
-                a:
+                id:
                     type: number
                     format: int
-                b:
-                    type: number
-                    format: int
-        responseAdderAdd:
+        responseUserGetUserNameByID:
             type: object
             properties:
-                c:
-                    type: number
-                    format: int
+                name:
+                    type: string

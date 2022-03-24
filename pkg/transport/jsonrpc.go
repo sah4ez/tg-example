@@ -92,15 +92,15 @@ func (srv *Server) serveBatch(ctx *fiber.Ctx) (err error) {
 		method := strings.ToLower(request.Method)
 		switch method {
 
-		case "adder.add":
+		case "user.getusernamebyid":
 			wg.Add(1)
 			go func(request baseJsonRPC) {
 				if request.ID != nil {
-					responses.append(srv.httpAdder.add(ctx, request))
+					responses.append(srv.httpUser.getUserNameByID(ctx, request))
 					wg.Done()
 					return
 				}
-				srv.httpAdder.add(ctx, request)
+				srv.httpUser.getUserNameByID(ctx, request)
 				wg.Done()
 			}(request)
 		default:
