@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	uuid "github.com/google/uuid"
 )
 
 type ServiceRoute interface {
@@ -23,18 +24,56 @@ func Service(svc ServiceRoute) Option {
 	}
 }
 
+func Files(svc *httpFiles) Option {
+	return func(srv *Server) {
+		if srv.srvHTTP != nil {
+			srv.httpFiles = svc
+			svc.maxBatchSize = srv.maxBatchSize
+			svc.maxParallelBatch = srv.maxParallelBatch
+			svc.SetRoutes(srv.Fiber())
+		}
+	}
+}
+
 func User(svc *httpUser) Option {
 	return func(srv *Server) {
 		if srv.srvHTTP != nil {
 			srv.httpUser = svc
+			svc.maxBatchSize = srv.maxBatchSize
+			svc.maxParallelBatch = srv.maxParallelBatch
 			svc.SetRoutes(srv.Fiber())
 		}
+	}
+}
+
+func SetFiberCfg(cfg fiber.Config) Option {
+	return func(srv *Server) {
+		srv.config = cfg
+		srv.config.DisableStartupMessage = true
+	}
+}
+
+func SetReadBufferSize(size int) Option {
+	return func(srv *Server) {
+		srv.config.ReadBufferSize = size
 	}
 }
 
 func MaxBodySize(max int) Option {
 	return func(srv *Server) {
 		srv.config.BodyLimit = max
+	}
+}
+
+func MaxBatchSize(size int) Option {
+	return func(srv *Server) {
+		srv.maxBatchSize = size
+	}
+}
+
+func MaxBatchWorkers(size int) Option {
+	return func(srv *Server) {
+		srv.maxParallelBatch = size
 	}
 }
 
@@ -47,6 +86,31 @@ func ReadTimeout(timeout time.Duration) Option {
 func WriteTimeout(timeout time.Duration) Option {
 	return func(srv *Server) {
 		srv.config.WriteTimeout = timeout
+	}
+}
+
+func WithRequestID(headerName string) Option {
+	return func(srv *Server) {
+		srv.headerHandlers[headerName] = func(value string) Header {
+			if value == "" {
+				value = uuid.New().String()
+			}
+			return Header{
+
+				LogKey:        "requestID",
+				LogValue:      value,
+				ResponseKey:   headerName,
+				ResponseValue: value,
+				SpanKey:       "requestID",
+				SpanValue:     value,
+			}
+		}
+	}
+}
+
+func WithHeader(headerName string, handler HeaderHandler) Option {
+	return func(srv *Server) {
+		srv.headerHandlers[headerName] = handler
 	}
 }
 

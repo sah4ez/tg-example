@@ -9,6 +9,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/sah4ez/tg-example/pkg/config"
 	"github.com/sah4ez/tg-example/pkg/errors"
+	"github.com/sah4ez/tg-example/pkg/files"
 	"github.com/sah4ez/tg-example/pkg/storage"
 	"github.com/sah4ez/tg-example/pkg/transport"
 	"github.com/sah4ez/tg-example/pkg/user"
@@ -36,12 +37,14 @@ func main() {
 	)
 
 	svcUser := user.New(userStore)
+	svcFiles := files.New()
 
 	services := []transport.Option{
-		transport.User(transport.NewUser(log.Logger, svcUser)),
+		transport.User(transport.NewUser(svcUser)),
+		transport.Files(transport.NewFiles(svcFiles)),
 	}
 
-	srv := transport.New(log.Logger, services...).WithLog(log.Logger)
+	srv := transport.New(log.Logger, services...).WithLog()
 
 	srv.Fiber().Get("/api/healthcheck", func(ctx *fiber.Ctx) error {
 		ctx.Status(fiber.StatusOK)

@@ -3,15 +3,15 @@ package user
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/gofiber/fiber/v2"
-	goUUID "github.com/google/uuid"
 	"github.com/rs/zerolog"
-	"github.com/seniorGolang/json"
 )
 
 const (
-	maxParallelBatch = 100
+	defaultMaxBatchSize     = 100
+	defaultMaxParallelBatch = 10
 	// Version defines the version of the JSON RPC implementation
 	Version = "2.0"
 	// contentTypeJson defines the content type to be served
@@ -67,6 +67,9 @@ type Batch []baseJsonRPC
 func (batch *Batch) Append(request baseJsonRPC) {
 	*batch = append(*batch, request)
 }
+func (batch *Batch) ToArray() []baseJsonRPC {
+	return *batch
+}
 
 func New(name string, log zerolog.Logger, url string, opts ...Option) (cli *ClientJsonRPC) {
 	cli = &ClientJsonRPC{
@@ -118,12 +121,6 @@ func (cli *ClientJsonRPC) jsonrpcCall(ctx context.Context, log zerolog.Logger, r
 	if err = agent.Parse(); err != nil {
 		return
 	}
-
-	requestID, _ := ctx.Value(headerRequestID).(string)
-	if requestID == "" {
-		requestID = goUUID.New().String()
-	}
-	req.Header.Set(headerRequestID, requestID)
 	for _, header := range cli.headers {
 		if value, ok := ctx.Value(header).(string); ok {
 			req.Header.Set(header, value)

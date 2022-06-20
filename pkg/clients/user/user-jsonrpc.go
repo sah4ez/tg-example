@@ -3,9 +3,9 @@ package user
 
 import (
 	"context"
+	"encoding/json"
 
 	goUUID "github.com/google/uuid"
-	json "github.com/seniorGolang/json"
 )
 
 type ClientUser struct {

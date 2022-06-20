@@ -4,7 +4,6 @@ package transport
 import (
 	"context"
 
-	"github.com/rs/zerolog"
 	"github.com/sah4ez/tg-example/pkg/interfaces"
 )
 
@@ -17,7 +16,7 @@ type MiddlewareSetUser interface {
 	Wrap(m MiddlewareUser)
 	WrapGetUserNameByID(m MiddlewareUserGetUserNameByID)
 
-	WithLog(log zerolog.Logger)
+	WithLog()
 }
 
 func newServerUser(svc interfaces.User) *serverUser {
@@ -40,6 +39,6 @@ func (srv *serverUser) WrapGetUserNameByID(m MiddlewareUserGetUserNameByID) {
 	srv.getUserNameByID = m(srv.getUserNameByID)
 }
 
-func (srv *serverUser) WithLog(log zerolog.Logger) {
-	srv.Wrap(loggerMiddlewareUser(log))
+func (srv *serverUser) WithLog() {
+	srv.Wrap(loggerMiddlewareUser())
 }

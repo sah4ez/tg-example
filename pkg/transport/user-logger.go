@@ -5,42 +5,34 @@ import (
 	"context"
 	"time"
 
-	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"github.com/sah4ez/tg-example/pkg/interfaces"
 	"github.com/seniorGolang/dumper/viewer"
 )
 
 type loggerUser struct {
 	next interfaces.User
-	log  zerolog.Logger
 }
 
-func loggerMiddlewareUser(log zerolog.Logger) MiddlewareUser {
+func loggerMiddlewareUser() MiddlewareUser {
 	return func(next interfaces.User) interfaces.User {
-		return &loggerUser{
-			log:  log,
-			next: next,
-		}
+		return &loggerUser{next: next}
 	}
 }
 
 func (m loggerUser) GetUserNameByID(ctx context.Context, id int) (name string, err error) {
+	logger := log.Ctx(ctx).With().Str("service", "User").Str("method", "getUserNameByID").Logger()
 	defer func(begin time.Time) {
 		fields := map[string]interface{}{
-			"method":   "getUserNameByID",
 			"request":  viewer.Sprintf("%+v", requestUserGetUserNameByID{Id: id}),
 			"response": viewer.Sprintf("%+v", responseUserGetUserNameByID{Name: name}),
-			"service":  "User",
 			"took":     time.Since(begin).String(),
 		}
-		if ctx.Value(headerRequestID) != nil {
-			fields["requestID"] = ctx.Value(headerRequestID)
-		}
 		if err != nil {
-			m.log.Error().Err(err).Fields(fields).Msg("call getUserNameByID")
+			logger.Error().Err(err).Fields(fields).Msg("call getUserNameByID")
 			return
 		}
-		m.log.Info().Fields(fields).Msg("call getUserNameByID")
+		logger.Info().Fields(fields).Msg("call getUserNameByID")
 	}(time.Now())
 	return m.next.GetUserNameByID(ctx, id)
 }

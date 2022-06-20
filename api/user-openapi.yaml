@@ -6,6 +6,17 @@ info:
 servers:
     - url: http://localhost:9000
 paths:
+    /api/v1/public/file/template:
+        get:
+            tags:
+                - Files
+            responses:
+                "200":
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/responseFilesGetTemplate'
     /api/v1/user/getUserNameByID:
         post:
             tags:
@@ -74,12 +85,22 @@ paths:
                                             example: "2.0"
 components:
     schemas:
+        requestFilesGetTemplate:
+            type: object
         requestUserGetUserNameByID:
             type: object
             properties:
                 id:
                     type: number
                     format: int
+        responseFilesGetTemplate:
+            type: object
+            properties:
+                data:
+                    type: string
+                    format: byte
+                name:
+                    type: string
         responseUserGetUserNameByID:
             type: object
             properties:

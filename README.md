@@ -49,3 +49,12 @@ Log on server:
 2022-03-25T00:53:02+03:00 ERR call getUserNameByID error="user not found: record not found" method=getUserNameByID request={Id:1} response={Name:} service=User took=2.545998ms
 2022-03-25T00:54:36+03:00 INF call getUserNameByID method=getUserNameByID request={Id:1} response={Name:user} service=User took=2.123242ms
 ```
+
+# Serve binary data
+
+Prepare embeded files:
+
+```
+cd pkg/files/
+rice embed-go 
+```

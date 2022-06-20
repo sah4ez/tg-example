@@ -2,15 +2,13 @@
 package transport
 
 import (
+	"encoding/json"
 	"io"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog"
-	"github.com/seniorGolang/json"
+	"github.com/rs/zerolog/log"
 )
-
-const maxRequestBodySize = 104857600
-const headerRequestID = "X-Request-Id"
 
 type Server struct {
 	log zerolog.Logger
@@ -24,22 +22,32 @@ type Server struct {
 	srvHealth *fiber.App
 
 	reporterCloser io.Closer
+
+	maxBatchSize     int
+	maxParallelBatch int
+
+	httpFiles      *httpFiles
 	httpUser       *httpUser
+	headerHandlers map[string]HeaderHandler
 }
 
 func New(log zerolog.Logger, options ...Option) (srv *Server) {
 
 	srv = &Server{
-		config: fiber.Config{
-			BodyLimit:             maxRequestBodySize,
-			DisableStartupMessage: true,
-		},
-		log: log,
+		config:           fiber.Config{DisableStartupMessage: true},
+		headerHandlers:   make(map[string]HeaderHandler),
+		log:              log,
+		maxBatchSize:     defaultMaxBatchSize,
+		maxParallelBatch: defaultMaxParallelBatch,
 	}
 	for _, option := range options {
 		option(srv)
 	}
 	srv.srvHTTP = fiber.New(srv.config)
+	srv.srvHTTP.Use(recoverHandler)
+	srv.srvHTTP.Use(srv.setLogger)
+	srv.srvHTTP.Use(srv.logLevelHandler)
+	srv.srvHTTP.Use(srv.headersHandler)
 	for _, option := range options {
 		option(srv)
 	}
@@ -51,9 +59,12 @@ func (srv *Server) Fiber() *fiber.App {
 	return srv.srvHTTP
 }
 
-func (srv *Server) WithLog(log zerolog.Logger) *Server {
+func (srv *Server) WithLog() *Server {
+	if srv.httpFiles != nil {
+		srv.httpFiles = srv.Files().WithLog()
+	}
 	if srv.httpUser != nil {
-		srv.httpUser = srv.User().WithLog(log)
+		srv.httpUser = srv.User().WithLog()
 	}
 	return srv
 }
@@ -69,10 +80,10 @@ func (srv *Server) ServeHealth(address string, response interface{}) {
 	}()
 }
 
-func sendResponse(log zerolog.Logger, ctx *fiber.Ctx, resp interface{}) (err error) {
+func sendResponse(ctx *fiber.Ctx, resp interface{}) (err error) {
 	ctx.Response().Header.SetContentType("application/json")
 	if err = json.NewEncoder(ctx).Encode(resp); err != nil {
-		log.Error().Err(err).Str("body", string(ctx.Body())).Msg("response write error")
+		log.Ctx(ctx.UserContext()).Error().Err(err).Str("body", string(ctx.Body())).Msg("response write error")
 	}
 	return
 }
@@ -84,6 +95,10 @@ func (srv *Server) Shutdown() {
 	if srv.srvHealth != nil {
 		_ = srv.srvHealth.Shutdown()
 	}
+}
+
+func (srv Server) Files() *httpFiles {
+	return srv.httpFiles
 }
 
 func (srv Server) User() *httpUser {

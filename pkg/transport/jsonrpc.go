@@ -2,15 +2,18 @@
 package transport
 
 import (
+	"encoding/json"
 	"strings"
 	"sync"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/seniorGolang/json"
+	"github.com/pkg/errors"
+	log "github.com/rs/zerolog/log"
 )
 
 const (
-	maxParallelBatch = 100
+	defaultMaxBatchSize     = 100
+	defaultMaxParallelBatch = 10
 	// Version defines the version of the JSON RPC implementation
 	Version = "2.0"
 	// contentTypeJson defines the content type to be served
@@ -59,10 +62,10 @@ func (responses *jsonrpcResponses) append(response *baseJsonRPC) {
 		*responses = append(*responses, *response)
 	}
 }
-
-type methodJsonRPC func(ctx *fiber.Ctx, requestBase baseJsonRPC) (responseBase *baseJsonRPC)
-
 func (srv *Server) serveBatch(ctx *fiber.Ctx) (err error) {
+
+	var single bool
+	var requests []baseJsonRPC
 	methodHTTP := ctx.Method()
 	if methodHTTP != fiber.MethodPost {
 		ctx.Response().SetStatusCode(fiber.StatusMethodNotAllowed)
@@ -71,53 +74,73 @@ func (srv *Server) serveBatch(ctx *fiber.Ctx) (err error) {
 		}
 		return
 	}
-	if value := ctx.Context().Value(CtxCancelRequest); value != nil {
-		return
-	}
-	var single bool
-	var requests []baseJsonRPC
 	if err = json.Unmarshal(ctx.Body(), &requests); err != nil {
 		var request baseJsonRPC
 		if err = json.Unmarshal(ctx.Body(), &request); err != nil {
-			return sendResponse(srv.log, ctx, makeErrorResponseJsonRPC([]byte("\"0\""), parseError, "request body could not be decoded: "+err.Error(), nil))
+			return sendResponse(ctx, makeErrorResponseJsonRPC([]byte("\"0\""), parseError, "request body could not be decoded: "+err.Error(), nil))
 		}
 		single = true
 		requests = append(requests, request)
 	}
-	responses := make(jsonrpcResponses, 0, len(requests))
-	var n int
-	var wg sync.WaitGroup
-	for _, request := range requests {
-		methodNameOrigin := request.Method
-		method := strings.ToLower(request.Method)
-		switch method {
-
-		case "user.getusernamebyid":
-			wg.Add(1)
-			go func(request baseJsonRPC) {
-				if request.ID != nil {
-					responses.append(srv.httpUser.getUserNameByID(ctx, request))
-					wg.Done()
-					return
-				}
-				srv.httpUser.getUserNameByID(ctx, request)
-				wg.Done()
-			}(request)
-		default:
-			responses.append(makeErrorResponseJsonRPC(request.ID, methodNotFoundError, "invalid method '"+methodNameOrigin+"'", nil))
-		}
-		if n > maxParallelBatch {
-			n = 0
-			wg.Wait()
-		}
-		n++
-	}
-	wg.Wait()
 	if single {
-		return sendResponse(srv.log, ctx, responses[0])
+		return sendResponse(ctx, srv.doSingleBatch(ctx, requests[0]))
 	}
-	return sendResponse(srv.log, ctx, responses)
+	return sendResponse(ctx, srv.doBatch(ctx, requests))
 }
+func (srv *Server) doBatch(ctx *fiber.Ctx, requests []baseJsonRPC) (responses jsonrpcResponses) {
+
+	if len(requests) < srv.maxBatchSize {
+		responses.append(makeErrorResponseJsonRPC(nil, invalidRequestError, "batch size exceeded", nil))
+		return
+	}
+	var wg sync.WaitGroup
+	batchSize := srv.maxParallelBatch
+	if len(requests) < batchSize {
+		batchSize = len(requests)
+	}
+	callCh := make(chan baseJsonRPC, batchSize)
+	for i := 0; i < batchSize; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for request := range callCh {
+				response := srv.doSingleBatch(ctx, request)
+				if request.ID != nil {
+					responses.append(response)
+				}
+			}
+		}()
+	}
+	for idx := range requests {
+		callCh <- requests[idx]
+	}
+	close(callCh)
+	wg.Wait()
+	return
+}
+func (srv *Server) doSingleBatch(ctx *fiber.Ctx, request baseJsonRPC) (response *baseJsonRPC) {
+
+	methodCtx := ctx.UserContext()
+	methodNameOrigin := request.Method
+	method := strings.ToLower(request.Method)
+	defer func() {
+		if r := recover(); r != nil {
+			err := errors.New("call method panic")
+			if request.ID != nil {
+				response = makeErrorResponseJsonRPC(request.ID, invalidRequestError, "panic on method '"+methodNameOrigin+"'", err)
+			}
+			log.Ctx(methodCtx).Error().Stack().Err(err).Msg("panic occurred")
+		}
+	}()
+	switch method {
+	case "user.getusernamebyid":
+		return srv.httpUser.getUserNameByID(ctx, request)
+	default:
+		return makeErrorResponseJsonRPC(request.ID, methodNotFoundError, "invalid method '"+methodNameOrigin+"'", nil)
+	}
+}
+
+type methodJsonRPC func(ctx *fiber.Ctx, requestBase baseJsonRPC) (responseBase *baseJsonRPC)
 
 func makeErrorResponseJsonRPC(id idJsonRPC, code int, msg string, data interface{}) *baseJsonRPC {
 
