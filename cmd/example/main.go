@@ -42,6 +42,7 @@ func main() {
 	svcAdder := adder.New()
 
 	services := []transport.Option{
+		transport.WithRequestID("X-Request-Id"),
 		transport.User(transport.NewUser(svcUser)),
 		transport.Files(transport.NewFiles(svcFiles)),
 		transport.Adder(transport.NewAdder(svcAdder)),
