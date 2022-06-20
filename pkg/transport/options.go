@@ -24,6 +24,17 @@ func Service(svc ServiceRoute) Option {
 	}
 }
 
+func Adder(svc *httpAdder) Option {
+	return func(srv *Server) {
+		if srv.srvHTTP != nil {
+			srv.httpAdder = svc
+			svc.maxBatchSize = srv.maxBatchSize
+			svc.maxParallelBatch = srv.maxParallelBatch
+			svc.SetRoutes(srv.Fiber())
+		}
+	}
+}
+
 func Files(svc *httpFiles) Option {
 	return func(srv *Server) {
 		if srv.srvHTTP != nil {

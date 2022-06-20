@@ -17,6 +17,17 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/responseFilesGetTemplate'
+    /api/v1/sum:
+        get:
+            tags:
+                - Adder
+            responses:
+                "200":
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/responseAdderSum'
     /api/v1/user/getUserNameByID:
         post:
             tags:
@@ -85,12 +96,20 @@ paths:
                                             example: "2.0"
 components:
     schemas:
+        requestAdderSum:
+            type: object
         requestFilesGetTemplate:
             type: object
         requestUserGetUserNameByID:
             type: object
             properties:
                 id:
+                    type: number
+                    format: int
+        responseAdderSum:
+            type: object
+            properties:
+                c:
                     type: number
                     format: int
         responseFilesGetTemplate:

@@ -7,6 +7,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog/log"
+	"github.com/sah4ez/tg-example/pkg/adder"
 	"github.com/sah4ez/tg-example/pkg/config"
 	"github.com/sah4ez/tg-example/pkg/errors"
 	"github.com/sah4ez/tg-example/pkg/files"
@@ -38,10 +39,12 @@ func main() {
 
 	svcUser := user.New(userStore)
 	svcFiles := files.New()
+	svcAdder := adder.New()
 
 	services := []transport.Option{
 		transport.User(transport.NewUser(svcUser)),
 		transport.Files(transport.NewFiles(svcFiles)),
+		transport.Adder(transport.NewAdder(svcAdder)),
 	}
 
 	srv := transport.New(log.Logger, services...).WithLog()

@@ -26,6 +26,7 @@ type Server struct {
 	maxBatchSize     int
 	maxParallelBatch int
 
+	httpAdder      *httpAdder
 	httpFiles      *httpFiles
 	httpUser       *httpUser
 	headerHandlers map[string]HeaderHandler
@@ -60,6 +61,9 @@ func (srv *Server) Fiber() *fiber.App {
 }
 
 func (srv *Server) WithLog() *Server {
+	if srv.httpAdder != nil {
+		srv.httpAdder = srv.Adder().WithLog()
+	}
 	if srv.httpFiles != nil {
 		srv.httpFiles = srv.Files().WithLog()
 	}
@@ -95,6 +99,10 @@ func (srv *Server) Shutdown() {
 	if srv.srvHealth != nil {
 		_ = srv.srvHealth.Shutdown()
 	}
+}
+
+func (srv Server) Adder() *httpAdder {
+	return srv.httpAdder
 }
 
 func (srv Server) Files() *httpFiles {
