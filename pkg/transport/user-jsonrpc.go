@@ -77,7 +77,7 @@ func (http *httpUser) serveMethod(ctx *fiber.Ctx, methodName string, methodHandl
 }
 func (http *httpUser) doBatch(ctx *fiber.Ctx, requests []baseJsonRPC) (responses jsonrpcResponses) {
 
-	if len(requests) < http.maxBatchSize {
+	if len(requests) > http.maxBatchSize {
 		responses.append(makeErrorResponseJsonRPC(nil, invalidRequestError, "batch size exceeded", nil))
 		return
 	}

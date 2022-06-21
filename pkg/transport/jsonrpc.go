@@ -89,7 +89,7 @@ func (srv *Server) serveBatch(ctx *fiber.Ctx) (err error) {
 }
 func (srv *Server) doBatch(ctx *fiber.Ctx, requests []baseJsonRPC) (responses jsonrpcResponses) {
 
-	if len(requests) < srv.maxBatchSize {
+	if len(requests) > srv.maxBatchSize {
 		responses.append(makeErrorResponseJsonRPC(nil, invalidRequestError, "batch size exceeded", nil))
 		return
 	}
