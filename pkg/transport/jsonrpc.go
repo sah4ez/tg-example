@@ -99,6 +99,7 @@ func (srv *Server) doBatch(ctx *fiber.Ctx, requests []baseJsonRPC) (responses js
 		batchSize = len(requests)
 	}
 	callCh := make(chan baseJsonRPC, batchSize)
+	responses = make(jsonrpcResponses, 0, len(requests))
 	for i := 0; i < batchSize; i++ {
 		wg.Add(1)
 		go func() {

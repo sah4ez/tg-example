@@ -14,3 +14,9 @@ func Headers(headers ...string) Option {
 		cli.headers = headers
 	}
 }
+
+func Insecure() Option {
+	return func(cli *ClientJsonRPC) {
+		cli.insecure = true
+	}
+}

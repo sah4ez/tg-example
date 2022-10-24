@@ -23,7 +23,7 @@ func NewAdder(svcAdder interfaces.Adder) (srv *httpAdder) {
 	return
 }
 
-func (http httpAdder) Service() MiddlewareSetAdder {
+func (http *httpAdder) Service() MiddlewareSetAdder {
 	return http.svc
 }
 

@@ -23,7 +23,7 @@ func NewFiles(svcFiles interfaces.Files) (srv *httpFiles) {
 	return
 }
 
-func (http httpFiles) Service() MiddlewareSetFiles {
+func (http *httpFiles) Service() MiddlewareSetFiles {
 	return http.svc
 }
 

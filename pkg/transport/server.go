@@ -101,14 +101,14 @@ func (srv *Server) Shutdown() {
 	}
 }
 
-func (srv Server) Adder() *httpAdder {
+func (srv *Server) Adder() *httpAdder {
 	return srv.httpAdder
 }
 
-func (srv Server) Files() *httpFiles {
+func (srv *Server) Files() *httpFiles {
 	return srv.httpFiles
 }
 
-func (srv Server) User() *httpUser {
+func (srv *Server) User() *httpUser {
 	return srv.httpUser
 }

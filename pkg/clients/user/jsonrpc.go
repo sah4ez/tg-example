@@ -54,10 +54,11 @@ func (err errorJsonRPC) Error() string {
 }
 
 type ClientJsonRPC struct {
-	url     string
-	name    string
-	log     zerolog.Logger
-	headers []string
+	url      string
+	name     string
+	insecure bool
+	log      zerolog.Logger
+	headers  []string
 
 	errorDecoder ErrorDecoder
 }
@@ -120,6 +121,9 @@ func (cli *ClientJsonRPC) jsonrpcCall(ctx context.Context, log zerolog.Logger, r
 	req.Header.SetMethod(fiber.MethodPost)
 	if err = agent.Parse(); err != nil {
 		return
+	}
+	if cli.insecure {
+		agent = agent.InsecureSkipVerify()
 	}
 	for _, header := range cli.headers {
 		if value, ok := ctx.Value(header).(string); ok {
