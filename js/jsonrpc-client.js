@@ -100,7 +100,7 @@ this.scheduler = new JSONRPCScheduler(transport);
 }
 
 /**
-* @param {number} id
+* @param {number} Id
 * @return {PromiseLike<{Name: string}>}
 **/
 getUserNameByID(id) {

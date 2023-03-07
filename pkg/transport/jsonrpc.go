@@ -7,8 +7,6 @@ import (
 	"sync"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/pkg/errors"
-	log "github.com/rs/zerolog/log"
 )
 
 const (
@@ -52,14 +50,14 @@ func (err errorJsonRPC) Error() string {
 	return err.Message
 }
 
-type jsonrpcResponses []baseJsonRPC
+type jsonrpcResponses []*baseJsonRPC
 
 func (responses *jsonrpcResponses) append(response *baseJsonRPC) {
 	if response == nil {
 		return
 	}
 	if response.ID != nil {
-		*responses = append(*responses, *response)
+		*responses = append(*responses, response)
 	}
 }
 func (srv *Server) serveBatch(ctx *fiber.Ctx) (err error) {
@@ -121,18 +119,8 @@ func (srv *Server) doBatch(ctx *fiber.Ctx, requests []baseJsonRPC) (responses js
 }
 func (srv *Server) doSingleBatch(ctx *fiber.Ctx, request baseJsonRPC) (response *baseJsonRPC) {
 
-	methodCtx := ctx.UserContext()
 	methodNameOrigin := request.Method
 	method := strings.ToLower(request.Method)
-	defer func() {
-		if r := recover(); r != nil {
-			err := errors.New("call method panic")
-			if request.ID != nil {
-				response = makeErrorResponseJsonRPC(request.ID, invalidRequestError, "panic on method '"+methodNameOrigin+"'", err)
-			}
-			log.Ctx(methodCtx).Error().Stack().Err(err).Msg("panic occurred")
-		}
-	}()
 	switch method {
 	case "user.getusernamebyid":
 		return srv.httpUser.getUserNameByID(ctx, request)

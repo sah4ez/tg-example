@@ -7,8 +7,6 @@ import (
 	"sync"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/pkg/errors"
-	"github.com/rs/zerolog/log"
 )
 
 func (http *httpUser) serveGetUserNameByID(ctx *fiber.Ctx) (err error) {
@@ -134,18 +132,8 @@ func (http *httpUser) serveBatch(ctx *fiber.Ctx) (err error) {
 }
 func (http *httpUser) doSingleBatch(ctx *fiber.Ctx, request baseJsonRPC) (response *baseJsonRPC) {
 
-	methodContext := ctx.UserContext()
 	methodNameOrigin := request.Method
 	method := strings.ToLower(request.Method)
-	defer func() {
-		if r := recover(); r != nil {
-			err := errors.New("call method panic")
-			if request.ID != nil {
-				response = makeErrorResponseJsonRPC(request.ID, invalidRequestError, "panic on method '"+methodNameOrigin+"'", err)
-			}
-			log.Ctx(methodContext).Error().Stack().Err(err).Msg("panic occurred")
-		}
-	}()
 	switch method {
 	case "getusernamebyid":
 		return http.getUserNameByID(ctx, request)

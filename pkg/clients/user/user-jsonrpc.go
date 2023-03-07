@@ -3,9 +3,9 @@ package user
 
 import (
 	"context"
-	"encoding/json"
 
-	goUUID "github.com/google/uuid"
+	"github.com/sah4ez/tg-example/pkg/clients/user/hasher"
+	"github.com/sah4ez/tg-example/pkg/clients/user/jsonrpc"
 )
 
 type ClientUser struct {
@@ -14,40 +14,41 @@ type ClientUser struct {
 
 type retUserGetUserNameByID func(name string, err error)
 
-func (cli *ClientUser) ReqGetUserNameByID(ret retUserGetUserNameByID, id int) (request baseJsonRPC) {
-
-	request = baseJsonRPC{
-		Method:  "user.getusernamebyid",
-		Params:  requestUserGetUserNameByID{Id: id},
-		Version: Version,
-	}
-	var err error
-	var response responseUserGetUserNameByID
-
-	if ret != nil {
-		request.retHandler = func(jsonrpcResponse baseJsonRPC) {
-			if jsonrpcResponse.Error != nil {
-				err = cli.errorDecoder(jsonrpcResponse.Error)
-				ret(response.Name, err)
-				return
-			}
-			err = json.Unmarshal(jsonrpcResponse.Result, &response)
-			ret(response.Name, err)
-		}
-		request.ID = []byte("\"" + goUUID.New().String() + "\"")
-	}
-	return
-}
-
 func (cli *ClientUser) GetUserNameByID(ctx context.Context, id int) (name string, err error) {
 
-	retHandler := func(_name string, _err error) {
-		name = _name
-		err = _err
+	request := requestUserGetUserNameByID{Id: id}
+	var response responseUserGetUserNameByID
+	var rpcResponse *jsonrpc.ResponseRPC
+	cacheKey, _ := hasher.Hash(request)
+	rpcResponse, err = cli.rpc.Call(ctx, "user.getusernamebyid", request)
+	var fallbackCheck func(error) bool
+	if cli.fallbackUser != nil {
+		fallbackCheck = cli.fallbackUser.GetUserNameByID
 	}
-	if blockErr := cli.Batch(ctx, cli.ReqGetUserNameByID(retHandler, id)); blockErr != nil {
-		err = blockErr
+	if err = cli.proceedResponse(ctx, err, cacheKey, fallbackCheck, rpcResponse, &response); err != nil {
 		return
+	}
+	return response.Name, err
+}
+
+func (cli *ClientUser) ReqGetUserNameByID(ctx context.Context, callback retUserGetUserNameByID, id int) (request RequestRPC) {
+
+	request = RequestRPC{rpcRequest: &jsonrpc.RequestRPC{
+		ID:      jsonrpc.NewID(),
+		JSONRPC: jsonrpc.Version,
+		Method:  "user.getusernamebyid",
+		Params:  requestUserGetUserNameByID{Id: id},
+	}}
+	if callback != nil {
+		var response responseUserGetUserNameByID
+		request.retHandler = func(err error, rpcResponse *jsonrpc.ResponseRPC) {
+			cacheKey, _ := hasher.Hash(request.rpcRequest.Params)
+			var fallbackCheck func(error) bool
+			if cli.fallbackUser != nil {
+				fallbackCheck = cli.fallbackUser.GetUserNameByID
+			}
+			callback(response.Name, cli.proceedResponse(ctx, err, cacheKey, fallbackCheck, rpcResponse, &response))
+		}
 	}
 	return
 }

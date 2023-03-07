@@ -23,15 +23,6 @@ func (http *httpAdder) serveSum(ctx *fiber.Ctx) (err error) {
 	var request requestAdderSum
 	ctx.Response().SetStatusCode(200)
 
-	if _aInt := ctx.Query("a"); _aInt != "" {
-		var aInt int
-		aInt, err = strconv.Atoi(_aInt)
-		if err != nil {
-			ctx.Status(fiber.StatusBadRequest)
-			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
-		}
-		request.AInt = aInt
-	}
 	if _bInt := ctx.Query("b"); _bInt != "" {
 		var bInt int
 		bInt, err = strconv.Atoi(_bInt)
@@ -40,6 +31,15 @@ func (http *httpAdder) serveSum(ctx *fiber.Ctx) (err error) {
 			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
 		}
 		request.BInt = bInt
+	}
+	if _aInt := ctx.Query("a"); _aInt != "" {
+		var aInt int
+		aInt, err = strconv.Atoi(_aInt)
+		if err != nil {
+			ctx.Status(fiber.StatusBadRequest)
+			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
+		}
+		request.AInt = aInt
 	}
 
 	var response responseAdderSum
