@@ -3,6 +3,7 @@ package user
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/sah4ez/tg-example/pkg/clients/user/hasher"
 	"github.com/sah4ez/tg-example/pkg/clients/user/jsonrpc"
@@ -12,7 +13,7 @@ type ClientUser struct {
 	*ClientJsonRPC
 }
 
-type retUserGetUserNameByID func(name string, err error)
+type retUserGetUserNameByID = func(name string, err error)
 
 func (cli *ClientUser) GetUserNameByID(ctx context.Context, id int) (name string, err error) {
 
@@ -24,6 +25,13 @@ func (cli *ClientUser) GetUserNameByID(ctx context.Context, id int) (name string
 	var fallbackCheck func(error) bool
 	if cli.fallbackUser != nil {
 		fallbackCheck = cli.fallbackUser.GetUserNameByID
+	}
+	if rpcResponse != nil && rpcResponse.Error != nil {
+		if cli.errorDecoder != nil {
+			err = cli.errorDecoder(rpcResponse.Error.Raw())
+		} else {
+			err = fmt.Errorf(rpcResponse.Error.Message)
+		}
 	}
 	if err = cli.proceedResponse(ctx, err, cacheKey, fallbackCheck, rpcResponse, &response); err != nil {
 		return
@@ -46,6 +54,13 @@ func (cli *ClientUser) ReqGetUserNameByID(ctx context.Context, callback retUserG
 			var fallbackCheck func(error) bool
 			if cli.fallbackUser != nil {
 				fallbackCheck = cli.fallbackUser.GetUserNameByID
+			}
+			if rpcResponse != nil && rpcResponse.Error != nil {
+				if cli.errorDecoder != nil {
+					err = cli.errorDecoder(rpcResponse.Error.Raw())
+				} else {
+					err = fmt.Errorf(rpcResponse.Error.Message)
+				}
 			}
 			callback(response.Name, cli.proceedResponse(ctx, err, cacheKey, fallbackCheck, rpcResponse, &response))
 		}

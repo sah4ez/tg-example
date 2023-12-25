@@ -5,6 +5,6 @@ package transport
 type requestFilesGetTemplate struct{}
 
 type responseFilesGetTemplate struct {
-	Data []byte `json:"data"`
-	Name string `json:"name"`
+	Data []byte `json:"data,omitempty"`
+	Name string `json:"name,omitempty"`
 }

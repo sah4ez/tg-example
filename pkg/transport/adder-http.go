@@ -23,7 +23,7 @@ func NewAdder(svcAdder interfaces.Adder) (srv *httpAdder) {
 	return
 }
 
-func (http *httpAdder) Service() MiddlewareSetAdder {
+func (http *httpAdder) Service() *serverAdder {
 	return http.svc
 }
 
@@ -38,5 +38,5 @@ func (http *httpAdder) WithErrorHandler(handler ErrorHandler) *httpAdder {
 }
 
 func (http *httpAdder) SetRoutes(route *fiber.App) {
-	route.Get("/api/v1/sum", http.serveSum)
+	route.Post("/api/v1/sum", http.serveSum)
 }

@@ -24,6 +24,10 @@ func (http *httpFiles) serveGetTemplate(ctx *fiber.Ctx) (err error) {
 
 	var response responseFilesGetTemplate
 	if response, err = http.getTemplate(ctx.UserContext(), request); err == nil {
+		var iResponse interface{} = response
+		if redirect, ok := iResponse.(withRedirect); ok {
+			return ctx.Redirect(redirect.RedirectTo())
+		}
 		return sendResponse(ctx, response)
 	}
 	if errCoder, ok := err.(withErrorCode); ok {

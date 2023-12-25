@@ -3,7 +3,6 @@ package transport
 
 import (
 	"context"
-	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -22,28 +21,18 @@ func (http *httpAdder) serveSum(ctx *fiber.Ctx) (err error) {
 
 	var request requestAdderSum
 	ctx.Response().SetStatusCode(200)
-
-	if _bInt := ctx.Query("b"); _bInt != "" {
-		var bInt int
-		bInt, err = strconv.Atoi(_bInt)
-		if err != nil {
-			ctx.Status(fiber.StatusBadRequest)
-			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
-		}
-		request.BInt = bInt
-	}
-	if _aInt := ctx.Query("a"); _aInt != "" {
-		var aInt int
-		aInt, err = strconv.Atoi(_aInt)
-		if err != nil {
-			ctx.Status(fiber.StatusBadRequest)
-			return sendResponse(ctx, "url arguments could not be decoded: "+err.Error())
-		}
-		request.AInt = aInt
+	if err = ctx.BodyParser(&request); err != nil {
+		ctx.Response().SetStatusCode(fiber.StatusBadRequest)
+		_, err = ctx.WriteString("request body could not be decoded: " + err.Error())
+		return
 	}
 
 	var response responseAdderSum
 	if response, err = http.sum(ctx.UserContext(), request); err == nil {
+		var iResponse interface{} = response
+		if redirect, ok := iResponse.(withRedirect); ok {
+			return ctx.Redirect(redirect.RedirectTo())
+		}
 		return sendResponse(ctx, response)
 	}
 	if errCoder, ok := err.(withErrorCode); ok {

@@ -91,6 +91,15 @@ func (srv *Server) doBatch(ctx *fiber.Ctx, requests []baseJsonRPC) (responses js
 		responses.append(makeErrorResponseJsonRPC(nil, invalidRequestError, "batch size exceeded", nil))
 		return
 	}
+	if strings.EqualFold(ctx.Get("X-Sync-On"), "true") {
+		for _, request := range requests {
+			response := srv.doSingleBatch(ctx, request)
+			if request.ID != nil {
+				responses.append(response)
+			}
+		}
+		return
+	}
 	var wg sync.WaitGroup
 	batchSize := srv.maxParallelBatch
 	if len(requests) < batchSize {

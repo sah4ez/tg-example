@@ -63,11 +63,11 @@ func (cli *ClientJsonRPC) proceedResponse(ctx context.Context, httpErr error, ca
 			}
 		}
 		return
-	}), cb.Fallback(func() (err error) {
+	}), cb.Fallback(func(err error) error {
 		if cli.cache != nil && cacheKey != 0 {
 			_, _, err = cli.cache.GetTTL(ctx, strconv.FormatUint(cacheKey, 10), &methodResponse)
 		}
-		return
+		return err
 	}))
 	return
 }

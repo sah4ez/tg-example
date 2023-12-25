@@ -4,6 +4,7 @@ package user
 import (
 	"time"
 
+	"github.com/sah4ez/tg-example/pkg/clients/user/cb"
 	"github.com/sah4ez/tg-example/pkg/clients/user/jsonrpc"
 )
 
@@ -24,6 +25,12 @@ func DecodeError(decoder ErrorDecoder) Option {
 func Cache(cache cache) Option {
 	return func(cli *ClientJsonRPC) {
 		cli.cache = cache
+	}
+}
+
+func CircuitBreaker(cfg cb.Settings) Option {
+	return func(cli *ClientJsonRPC) {
+		cli.cbCfg = cfg
 	}
 }
 

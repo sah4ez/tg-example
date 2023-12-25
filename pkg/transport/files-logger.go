@@ -5,9 +5,10 @@ import (
 	"context"
 	"time"
 
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/sah4ez/tg-example/pkg/interfaces"
-	"github.com/seniorGolang/dumper/viewer"
+	"github.com/sah4ez/tg-example/pkg/transport/viewer"
 )
 
 type loggerFiles struct {
@@ -23,19 +24,21 @@ func loggerMiddlewareFiles() MiddlewareFiles {
 func (m loggerFiles) GetTemplate(ctx context.Context) (data []byte, name string, err error) {
 	logger := log.Ctx(ctx).With().Str("service", "Files").Str("method", "getTemplate").Logger()
 	defer func(begin time.Time) {
-		fields := map[string]interface{}{
-			"request": viewer.Sprintf("%+v", requestFilesGetTemplate{}),
-			"response": viewer.Sprintf("%+v", responseFilesGetTemplate{
-				Data: data,
-				Name: name,
-			}),
-			"took": time.Since(begin).String(),
+		logHandle := func(ev *zerolog.Event) {
+			fields := map[string]interface{}{
+				"request": viewer.Sprintf("%+v", requestFilesGetTemplate{}),
+				"response": viewer.Sprintf("%+v", responseFilesGetTemplate{
+					Data: data,
+					Name: name,
+				}),
+			}
+			ev.Fields(fields).Str("took", time.Since(begin).String())
 		}
 		if err != nil {
-			logger.Error().Err(err).Fields(fields).Msg("call getTemplate")
+			logger.Error().Err(err).Func(logHandle).Msg("call getTemplate")
 			return
 		}
-		logger.Info().Fields(fields).Msg("call getTemplate")
+		logger.Info().Func(logHandle).Msg("call getTemplate")
 	}(time.Now())
 	return m.next.GetTemplate(ctx)
 }

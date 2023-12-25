@@ -2,9 +2,9 @@
 package user
 
 type requestUserGetUserNameByID struct {
-	Id int `json:"id"`
+	Id int `json:"id,omitempty"`
 }
 
 type responseUserGetUserNameByID struct {
-	Name string `json:"name"`
+	Name string `json:"name,omitempty"`
 }

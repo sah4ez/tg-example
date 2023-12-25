@@ -2,10 +2,10 @@
 package transport
 
 type requestAdderSum struct {
-	AInt int `json:"aInt"`
-	BInt int `json:"bInt"`
+	AInt int `json:"aInt,omitempty"`
+	BInt int `json:"bInt,omitempty"`
 }
 
 type responseAdderSum struct {
-	C int `json:"c"`
+	C int `json:"c,omitempty"`
 }

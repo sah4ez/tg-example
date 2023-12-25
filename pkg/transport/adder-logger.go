@@ -5,9 +5,10 @@ import (
 	"context"
 	"time"
 
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/sah4ez/tg-example/pkg/interfaces"
-	"github.com/seniorGolang/dumper/viewer"
+	"github.com/sah4ez/tg-example/pkg/transport/viewer"
 )
 
 type loggerAdder struct {
@@ -23,19 +24,21 @@ func loggerMiddlewareAdder() MiddlewareAdder {
 func (m loggerAdder) Sum(ctx context.Context, aInt int, bInt int) (c int, err error) {
 	logger := log.Ctx(ctx).With().Str("service", "Adder").Str("method", "sum").Logger()
 	defer func(begin time.Time) {
-		fields := map[string]interface{}{
-			"request": viewer.Sprintf("%+v", requestAdderSum{
-				AInt: aInt,
-				BInt: bInt,
-			}),
-			"response": viewer.Sprintf("%+v", responseAdderSum{C: c}),
-			"took":     time.Since(begin).String(),
+		logHandle := func(ev *zerolog.Event) {
+			fields := map[string]interface{}{
+				"request": viewer.Sprintf("%+v", requestAdderSum{
+					AInt: aInt,
+					BInt: bInt,
+				}),
+				"response": viewer.Sprintf("%+v", responseAdderSum{C: c}),
+			}
+			ev.Fields(fields).Str("took", time.Since(begin).String())
 		}
 		if err != nil {
-			logger.Error().Err(err).Fields(fields).Msg("call sum")
+			logger.Error().Err(err).Func(logHandle).Msg("call sum")
 			return
 		}
-		logger.Info().Fields(fields).Msg("call sum")
+		logger.Info().Func(logHandle).Msg("call sum")
 	}(time.Now())
 	return m.next.Sum(ctx, aInt, bInt)
 }

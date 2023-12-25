@@ -1,7 +1,6 @@
 openapi: 3.0.0
 info:
     title: Example API
-    description: Simple summator
     version: 1.0.0
 servers:
     - url: http://localhost:9000
@@ -10,6 +9,11 @@ paths:
         get:
             tags:
                 - Files
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/requestFilesGetTemplate'
             responses:
                 "200":
                     description: Successful operation
@@ -18,9 +22,14 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/responseFilesGetTemplate'
     /api/v1/sum:
-        get:
+        post:
             tags:
                 - Adder
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/requestAdderSum'
             responses:
                 "200":
                     description: Successful operation
@@ -98,6 +107,13 @@ components:
     schemas:
         requestAdderSum:
             type: object
+            properties:
+                aInt:
+                    type: number
+                    format: int
+                bInt:
+                    type: number
+                    format: int
         requestFilesGetTemplate:
             type: object
         requestUserGetUserNameByID:
